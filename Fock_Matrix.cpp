@@ -273,9 +273,6 @@ cout << 2;
     MatrixF = MatrixHCore + MatrixG;
 
 
-    //cout << MatrixF << endl;
-    //getchar();
-
    
 
     
