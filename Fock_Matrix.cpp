@@ -26,7 +26,7 @@ auto Fock_Matrix_calc(Mat_init MatrixHCore, Mat_init MatrixC, double *integrals,
     MatrixP.resize(nm, nm);
     MatrixG.resize(nm, nm);
     MatrixF.resize(nm, nm);
-    complex<double> a_b_y_d;
+    complex<double> a_b_y_d;    // (ab|yd)
     
     
     
