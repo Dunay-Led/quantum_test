@@ -1,13 +1,13 @@
 #ifndef P_Matrix
 #define P_Matrix
-#include "header.h"
+#include "header.hpp"
 using namespace Eigen;
 
 extern int nm;
 extern int Number_e;
 
 
-auto P_Matrix_form_C_count(Matrix<std::complex<double>, Dynamic, Dynamic> MatrixC) {
+Matrix<std::complex<double>, Dynamic, Dynamic> P_Matrix_form_C_count(Matrix<std::complex<double>, Dynamic, Dynamic> MatrixC) {
 
     
     Matrix<std::complex<double>, Dynamic, Dynamic> MatrixP;
@@ -30,7 +30,11 @@ auto P_Matrix_form_C_count(Matrix<std::complex<double>, Dynamic, Dynamic> Matrix
         }
     }
    
+
+   
     return MatrixP;
+
+    
 
 }
 

@@ -1,8 +1,9 @@
 #ifndef FockC
 #define FockC
 #include <libint2.hpp>
-#include "header.h"
+#include "header.hpp"
 #define Mat_init Matrix<std::complex<double>, Dynamic, Dynamic>
+#define Mat_init_r Matrix<double, Dynamic, Dynamic>
 using namespace Eigen;
 using namespace std;
 using libint2::Shell;
@@ -11,12 +12,14 @@ using libint2::Operator;
 using namespace libint2;
 
 
+
 extern int nm_aux;
 extern int nm;
 extern string file_path;
 extern string basis;
+extern int Number_e;
 
-auto Fock_Matrix_calc(Mat_init MatrixHCore, Mat_init MatrixC, double *integrals, Mat_init V_RI_1){
+Mat_init Fock_Matrix_calc(Mat_init MatrixHCore, Mat_init MatrixC, Mat_init_r integrals, Mat_init V_RI_1, vector<int> cumulant, vector<int> compressed_num, vector<double> compressed_data){
 
     
     Matrix<complex<double>, Dynamic, Dynamic> MatrixF;
@@ -127,14 +130,11 @@ auto Fock_Matrix_calc(Mat_init MatrixHCore, Mat_init MatrixC, double *integrals,
                 for (int psi_second = 0; psi_second != nm; ++psi_second){
 
                     
-                    MatrixG(phi_first, psi_first) += 2.0*MatrixP(psi_second, phi_second)*integrals[nm*nm*nm*phi_first + nm*nm*psi_first + nm*phi_second + psi_second];
-                    MatrixG(phi_first, psi_second) -= MatrixP(psi_first, phi_second)*integrals[nm*nm*nm*phi_first + nm*nm*psi_first + nm*phi_second + psi_second];
+                    MatrixG(phi_first, psi_first) += 2.0*MatrixP(psi_second, phi_second)*integrals(0, nm*nm*nm*phi_first + nm*nm*psi_first + nm*phi_second + psi_second);
+                    MatrixG(phi_first, psi_second) -= MatrixP(psi_first, phi_second)*integrals(0, nm*nm*nm*phi_first + nm*nm*psi_first + nm*phi_second + psi_second);
 
 
-                    //cout << MatrixG << endl;
-                    //printf("%d_%d_%d_%d = %6.6f", phi_first, psi_first, phi_second, psi_second, integrals[nm*nm*nm*phi_first + nm*nm*psi_first + nm*phi_second + psi_second]);
-                    //getchar();
-
+                    
                 }
             }
         }
@@ -157,7 +157,7 @@ auto Fock_Matrix_calc(Mat_init MatrixHCore, Mat_init MatrixC, double *integrals,
                 for (int B = 0; B != nm_aux; ++B){
                     for (int C = 0; C != nm_aux; ++C){
                 
-                        a_b_y_d += integrals[nm*nm_aux*phi_first+nm_aux*psi_first+B] * V_RI_1(B, C) * integrals[nm*nm_aux*phi_second+nm_aux*psi_second+C];
+                        a_b_y_d += integrals(0, nm*nm_aux*phi_first+nm_aux*psi_first+B) * V_RI_1(B, C) * integrals(0, nm*nm_aux*phi_second+nm_aux*psi_second+C);
         
                     
                     }
@@ -182,17 +182,17 @@ auto Fock_Matrix_calc(Mat_init MatrixHCore, Mat_init MatrixC, double *integrals,
     #endif
     
 
-    #ifdef RHF_Mem_RI_Compressed
+    #ifdef RHF_Mem_RI_Compressed_mb
 
 
     int start_point;
-    cout << 1;
+    
     int non_zero_num;
     
     int col_num;
      
     double element_data;
-    cout << 1;
+    
 
 
     for (int phi_first = 0; phi_first != nm; ++phi_first){
@@ -201,13 +201,13 @@ auto Fock_Matrix_calc(Mat_init MatrixHCore, Mat_init MatrixC, double *integrals,
                 for (int psi_second = 0; psi_second != nm; ++psi_second){
 
                 a_b_y_d = 0;
-cout << 1;
+
                 for (int i = 0; i!= nm_aux; ++i){
                     abB[i] = 0;
                     ydC[i] = 0;
                 }
                 
-           cout << 1;
+           
                 start_point = cumulanta[psi_first+phi_first*nm];
                 
                 
@@ -227,13 +227,13 @@ cout << 1;
                     abB[col_num] = element_data;
 
                 }
-cout << 2;
+
                 start_point = cumulanta[phi_second*nm + psi_second];
-                cout << 2;
+                
                 
 
                 non_zero_num = cumulanta[phi_second + psi_second*nm+1] - cumulanta[phi_second + psi_second*nm];
-                cout << 2;
+                
 
                 for (int i = 0; i!= non_zero_num; ++i){
                     
@@ -268,12 +268,63 @@ cout << 2;
    
 
     #endif
+ 
+    #ifdef RHF_Mem_RI_Compressed
+
+    int n_occ = Number_e/2;
+    Mat_init i_a_B;
+    i_a_B.resize(nm*n_occ, nm_aux);
+    i_a_B.setZero();
+
+    for (int f_aux = 0; f_aux != nm*nm; ++f_aux){
+
+    int a = f_aux % nm;
+
+    for (int first = cumulant[f_aux]; first != cumulant[f_aux+1]; ++first){
+
+        for (int i = 0; i != n_occ; ++i){
+
+
+       
+            i_a_B(i * nm+a, compressed_num[first]) += MatrixC(f_aux / nm, i) * compressed_data[first];
+
+
+            }
+        }
+    }
+ 
+    for (int alpha = 0; alpha != nm; ++alpha){
+        for (int beta = 0; beta != nm; ++beta){
+
+ 
+            MatrixG(alpha, beta) = J_contribution_calc(MatrixP, MatrixC,  V_RI_1, integrals, alpha, beta, cumulant, compressed_num, compressed_data, i_a_B);
+
+
+        }
+    }
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #endif
     
 
     MatrixF = MatrixHCore + MatrixG;
 
 
-   
 
     
     return MatrixF;

@@ -1,13 +1,12 @@
 #ifndef SCF_c
 #define SCF_c
-#include "header.h"
-#define Mat_init Matrix<std::complex<double>, Dynamic, Dynamic>
+#include "header.hpp"
 using namespace Eigen;
 using namespace std;
 
 extern int nm;
 
-int SCF_procedure(Mat_init MatrixC, Mat_init MatrixHCore, Mat_init MatrixX, double *integrals, Mat_init V_RI_1){
+int SCF_procedure(Mat_init MatrixC, Mat_init MatrixHCore, Mat_init MatrixX, Mat_init_r integrals, Mat_init V_RI_1, vector<int> cumulant, vector<int> compressed_num, vector<double> compressed_data){
 
 libint2::initialize();
 
@@ -31,7 +30,7 @@ do {
     
         MatrixP = P_Matrix_form_C_count(MatrixC);
 
-        MatrixF = Fock_Matrix_calc(MatrixHCore, MatrixC, integrals, V_RI_1);
+        MatrixF = Fock_Matrix_calc(MatrixHCore, MatrixC, integrals, V_RI_1, cumulant, compressed_num, compressed_data);
 
 
 

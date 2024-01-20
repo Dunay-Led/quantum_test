@@ -1,9 +1,10 @@
 #ifndef SOSCF
 #define SOSCF
 #include <libint2.hpp>
-#include "header.h"
+#include "header.hpp"
 #include <math.h>
 #define Mat_init Matrix<std::complex<double>, Dynamic, Dynamic>
+#define Mat_init_r Matrix<double, Dynamic, Dynamic>
 using namespace Eigen;
 using namespace std;
 using libint2::Shell;
@@ -14,7 +15,7 @@ using namespace std::chrono;
 
 extern int nm;
 
-int SOSCF_calc(Mat_init MatrixC, Mat_init MatrixHCore, Mat_init MatrixX1, double *integrals, Mat_init V_RI_1){
+int SOSCF_calc(Mat_init MatrixC, Mat_init MatrixHCore, Mat_init MatrixX1, Mat_init_r integrals, Mat_init V_RI_1, vector<int> cumulant, vector<int> compressed_num, vector<double> compressed_data, int Number_e){
 
     libint2::initialize();
 
@@ -93,7 +94,7 @@ int SOSCF_calc(Mat_init MatrixC, Mat_init MatrixHCore, Mat_init MatrixX1, double
 
     // Matrix of step is saved as folows: Row-major form, ( (o1v1, o1v2 ... o1v(Virtuall_orb_num) ... (o(Oc_num)v1, ... o(Occ_num)v(Virtuall_orb_num)) )
 
-    MatrixF = Fock_Matrix_calc(MatrixHCore, MatrixC, integrals, V_RI_1);
+    MatrixF = Fock_Matrix_calc(MatrixHCore, MatrixC, integrals, V_RI_1, cumulant, compressed_num, compressed_data);
     MatrixF_MO = MatrixC.transpose()*MatrixF*MatrixC;
    
 
@@ -221,7 +222,7 @@ int SOSCF_calc(Mat_init MatrixC, Mat_init MatrixHCore, Mat_init MatrixX1, double
     MatrixC_New = MatrixC*MatrixU.transpose();      // New Coefficient matrix creation
 
 
-    MatrixF_New = Fock_Matrix_calc(MatrixHCore, MatrixC_New, integrals, V_RI_1);
+    MatrixF_New = Fock_Matrix_calc(MatrixHCore, MatrixC_New, integrals, V_RI_1, cumulant, compressed_num, compressed_data);
 
     MatrixF_MO_New = MatrixC_New.transpose()*MatrixF_New*MatrixC_New;
 
@@ -299,14 +300,14 @@ int SOSCF_calc(Mat_init MatrixC, Mat_init MatrixHCore, Mat_init MatrixX1, double
 
     // Measuring memory consuption
 
-
+/*
     struct rusage usage;
 
     getrusage(RUSAGE_SELF, &usage);
 
     cout << "Memory used: " << usage.ru_maxrss << " kilobytes" << endl;
-
-
+    
+*/
 
 
 
@@ -338,7 +339,7 @@ int SOSCF_calc(Mat_init MatrixC, Mat_init MatrixHCore, Mat_init MatrixX1, double
     }   while (abs(deltaE0.real()) > conv_crit);
 
     
-    Matrix_F_ = Fock_Matrix_calc(MatrixHCore, MatrixC, integrals, V_RI_1);
+    Matrix_F_ = Fock_Matrix_calc(MatrixHCore, MatrixC, integrals, V_RI_1, cumulant, compressed_num, compressed_data);
     SelfAdjointEigenSolver<Eigen::Matrix<complex<double>, Dynamic, Dynamic>> eigensolver(MatrixX1 * Matrix_F_ * MatrixX1);
     e = 27.2113961318065*eigensolver.eigenvalues();
 

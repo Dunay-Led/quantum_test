@@ -1,6 +1,6 @@
 #ifndef HuckelABC
 #define HuckelABC
-#include "header.h"
+#include "header.hpp"
 #include "Hamilt_guess.cpp"
 #include <tuple>
 #include <map>
@@ -39,8 +39,7 @@ extern int Number_e;
 
 
 
-auto Extended_Huckel_Guess(){ 
-
+Mat_init Extended_Huckel_Guess(){ 
     libint2::initialize();
 
     string ExploringMolecule = file_path;
@@ -53,14 +52,16 @@ auto Extended_Huckel_Guess(){
     // Basis is here
 
     BasisSet obs(basis, atoms);
-
-
     BasisSet Huckel_shell("Huckel", atoms);
 
+    
 
     for (int i = 0; i!=Huckel_shell.size(); ++i){
         mini_nm += Huckel_shell[i].size();
+
     }
+  
+    
 
     MatrixS.resize(nm, nm);
     MatrixC_final.resize(nm, nm);
@@ -70,6 +71,8 @@ auto Extended_Huckel_Guess(){
     MatrixHCore.resize(mini_nm, mini_nm);
     Hamiltonian.resize(mini_nm, mini_nm);
     MatrixS_trans.resize(mini_nm, nm);
+
+    MatrixC_final.setZero();
 
 
     Engine s_engine(Operator::overlap,  // will compute overlap ints
@@ -180,17 +183,19 @@ auto Extended_Huckel_Guess(){
     Matrix<complex<double>, Dynamic, Dynamic> MatrixHCore = MatrixX * Hamiltonian * MatrixX;
 
     SelfAdjointEigenSolver<Eigen::Matrix<complex<double>, Dynamic, Dynamic>> eigensolver(MatrixHCore);
+    
 
     MatrixC = MatrixX * eigensolver.eigenvectors();
 
 
 
-
     // Obtaining Coefficient Matrix from guessed Hamiltonian in normal basis
+
+
     
     MatrixC_final.block(0, 0, nm, mini_nm) = (MatrixS.inverse() * MatrixS_trans.transpose() * MatrixC).rowwise().reverse();
 
-   
+  
     
 
     

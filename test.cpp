@@ -1,4 +1,4 @@
-#include "header.h"
+#include "header.hpp"
 
 int nm_aux = 0; // Number of basis functions of auxiliar basis
 int nm = 0;
@@ -16,7 +16,9 @@ int main(int argc, char* argv[]) {
 
     ifstream data_file;
     
-    data_file.open("/Users/vyasma/CLionProjects/Hartry_FockC/RHF_Mem_Free/RHF_Data.txt");
+    // Specify relative path in this way:  ~/quant_chem/RHF_Data.txt
+
+    data_file.open("/Users/vyasma/C++Project/quant_chem/RHF_Data.txt");
 
     string data_str;
     string aux_basis;
@@ -26,6 +28,7 @@ int main(int argc, char* argv[]) {
     getline(data_file, basis);
 
     Number_e = stoi(data_str);
+    
 
 
 
@@ -51,6 +54,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i!=obs.size(); ++i){
         nm += obs[i].size();
     }
+    cout << nm << "BBB" << endl;
 
 
     Matrix<complex<double>, Dynamic, Dynamic> MatrixS;
@@ -76,7 +80,13 @@ int main(int argc, char* argv[]) {
     V_RI_1.resize(nm_aux, nm_aux);
 
     #ifdef RHF_Mem
-    double *integrals {new double[nm*nm*nm*nm]};
+    Matrix<double, Dynamic, Dynamic> integrals;
+    integrals.resize(1, nm*nm*nm*nm);
+
+    vector<double> compressed_data {};
+    vector<int> compressed_num {};
+    vector<int> cumulant ;
+
     #endif
 
     #ifdef RHF_Mem_RI
@@ -92,11 +102,19 @@ int main(int argc, char* argv[]) {
     }
 
     Matrix<complex<double>, Dynamic, Dynamic> two_aux_eri;  // 2-electron repulsion matrix
+    Matrix<double, Dynamic, Dynamic> integrals;
 
     two_aux_eri.resize(nm_aux, nm_aux);
+    integrals.resize(1, nm*nm*nm_aux);
+    integrals.setZero();
     
 
-    double *integrals {new double[nm*nm*nm_aux]};
+    //double *integrals {new double[nm*nm*nm_aux]};
+
+    vector<double> compressed_data {};
+    vector<int> compressed_num {};
+    vector<int> cumulant ;
+
 
     #endif
 
@@ -117,17 +135,19 @@ int main(int argc, char* argv[]) {
     }
 
     Matrix<complex<double>, Dynamic, Dynamic> two_aux_eri;  // 2-electron repulsion matrix
+    Matrix<double, Dynamic, Dynamic> integrals;
 
     two_aux_eri.resize(nm_aux, nm_aux);
+    integrals.resize(1, nm_aux);
+    integrals.setZero();
     
 
-    double *integrals {new double[nm_aux]};
     
 
     vector<double> compressed_data {};
     vector<int> compressed_num {};
     vector<int> cumulant ;
-    //cumulant.push_back(0);
+    cumulant.push_back(0);
     
     
 
@@ -141,7 +161,11 @@ int main(int argc, char* argv[]) {
 
 
     #ifdef RHF_Mem_Free
-    double integrals[1];
+    Matrix<double, Dynamic, Dynamic> integrals;
+    integrals.resize(1, 1);
+    vector<double> compressed_data {};
+    vector<int> compressed_num {};
+    vector<int> cumulant ;
     #endif
     
 
@@ -293,7 +317,7 @@ int main(int argc, char* argv[]) {
                                 for(auto f4=0; f4!=n4; ++f4, ++f1234) {
                                     const auto bf4 = f4 + bf4_first;
 
-                                    integrals[nm*nm*nm*(bf1_first+f1)+nm*nm*(bf2_first+f2)+nm*(bf3_first+f3)+(bf4_first+f4)] = buf_1234[f1234];
+                                    integrals(0, nm*nm*nm*(bf1_first+f1)+nm*nm*(bf2_first+f2)+nm*(bf3_first+f3)+(bf4_first+f4)) = buf_1234[f1234];
 
 
                 //printf("%d_%d_%d_%d = %6.6f", bf1, bf2, bf3, bf4, buf_1234[f1234]);
@@ -354,8 +378,9 @@ int main(int argc, char* argv[]) {
                             for(auto f2=0; f2!=n2; ++f2, ++f1234) {
                                 const auto bf2 = f2 + bf2_first;
                             
-                                
-                                    integrals[nm*nm_aux*(bf1_first+f1)+nm_aux*(bf2_first+f2)+(bf3_first+f3)] = buf_1234[f1234];
+                            
+                                    integrals(0, (nm*nm_aux*(bf1_first+f1)+nm_aux*(bf2_first+f2)+(bf3_first+f3))) = buf_1234[f1234];
+                                    
                                     //printf("%d_%d_%d = %6.6f", bf1, bf2, bf3, buf_1234[f1234]);
                                     //getchar();
                                     if (abs(buf_1234[f1234]) < 0.001){
@@ -442,7 +467,7 @@ cout << c/c1;
 
     int non_zero = 0;
 
-   
+   int cou = 0;
         
     for(auto s1=0; s1!=obs.size(); ++s1) {
 
@@ -484,8 +509,8 @@ cout << c/c1;
                                 const auto bf3 = f3 + bf3_first;
                         
                                 
-                                integrals[bf3] = buf_1234[f1234*n1*n2+f1*n2+f2]; 
-                                cout << bf3 << endl;
+                                integrals(0, bf3) = buf_1234[f1234*n1*n2+f1*n2+f2]; 
+                                
 
                                 if (abs(buf_1234[f1234*n1*n2+f1*n2+f2]) > 0.000001){
 
@@ -496,40 +521,35 @@ cout << c/c1;
                                 
                                 }
                                 
-                                for (int i = 0 ; i!= nm_aux; ++i){
-                                    cout << integrals[i];
-                                }
-                                
+                               
                             }
                             
-                           
+                        
 
                         for (int i = 0; i != nm_aux; ++i){
 
-                    if (abs(integrals[i]) > 0.000001){
-                        
-                        ++non_zero;
+                            if (abs(integrals(0, i)) > 0.000001){
+                            
+                                ++non_zero;
 
-                        compressed_data.push_back(integrals[i]);
-                        compressed_num.push_back(i);
-                        
+                                compressed_data.push_back(integrals(0, i));
+                                compressed_num.push_back(i);
+                                //cout << i << " " << cou << endl;
+                                //++cou;
+                            
 
-                        
-                    }
-                   
-
+                            
+                            }
                     
 
-                }
+                        
 
-                cumulant.push_back(non_zero);
+                        }
+
+                        cumulant.push_back(non_zero);
 
                         }
                     }
-                   
-
-            cout <<"End << endl" << endl;
-                            getchar();
                             
 
                 
@@ -543,15 +563,12 @@ cout << c/c1;
             }
         
 
-            print(cumulant);
-    cout << endl;
-    print(compressed_num);
-    getchar();
-
+            
+    
+        cout << nm << endl;
         cout << c/c1;
         getchar();
         
-    cout << endl <<  c/c1 << endl;
 
     Engine two_eri(Operator::coulomb,obs_aux.max_nprim(),    // max # of primitives in shells this engine will accept
                     obs_aux.max_l());
@@ -584,7 +601,10 @@ cout << c/c1;
     
         }
     }
-    
+    /*
+    cout << "V_1" << endl << two_aux_eri << endl;
+    getchar();
+    */
     V_RI_1 = two_aux_eri.inverse(); // inverting V - RI matri
 //cout << V_RI_1;
 c = 0;
@@ -598,6 +618,7 @@ for(auto f1=0; f1!=V_RI_1.col(0).size(); ++f1){
     c1+=1;
                 }
 }
+
 cout << c/c1;
 
 
@@ -629,13 +650,13 @@ cout << c/c1;
     MatrixC = Extended_Huckel_Guess();
 
 
-    Huckel = Fock_Matrix_calc(MatrixHCore, MatrixC, integrals, V_RI_1);
+    Huckel = Fock_Matrix_calc(MatrixHCore, MatrixC, integrals, V_RI_1, cumulant, compressed_num, compressed_data);
     Huckel_d = MatrixX * Huckel * MatrixX;
     SelfAdjointEigenSolver<Eigen::Matrix<complex<double>, Dynamic, Dynamic>> eigensolver1(Huckel_d);
     MatrixC = MatrixX*eigensolver1.eigenvectors();
+  
 
-    
-    SOSCF_calc(MatrixC, MatrixHCore, MatrixX, integrals, V_RI_1); // Main SCF procedure
+    SOSCF_calc(MatrixC, MatrixHCore, MatrixX, integrals, V_RI_1, cumulant, compressed_num, compressed_data, Number_e); // Main SCF procedure
 
     
 

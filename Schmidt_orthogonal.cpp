@@ -12,7 +12,7 @@ using namespace std;
 
 // Takes Matrix as a first arg and then orthogonalising it
 
-auto Schmidt_orthonormal(Mat_init MatrixX){
+Mat_init Schmidt_orthonormal(Mat_init MatrixX){
 
     int Matrix_size = MatrixX.col(1).size();
 

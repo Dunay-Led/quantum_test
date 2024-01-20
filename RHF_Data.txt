@@ -1,4 +1,0 @@
-10
-/Users/vyasma/CLionProjects/Hartry_FockC/XYZ_data/h2o.xyz
-6-31g
-6-311g**
